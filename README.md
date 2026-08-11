@@ -10,31 +10,34 @@ A simple machine learning web app that estimates a person's risk of diabetes bas
 
 1. You enter basic health details in a form (gender, age, BMI, glucose level, etc.)
 2. A trained Random Forest model predicts the probability of diabetes
-3. The app shows the risk percentage and flags the person as **lower risk** or **higher risk**
+3. The app shows the risk percentage and flags the person as **lower risk** or **higher risk** (using an adjustable decision threshold, default 0.50)
 
 ---
 
 ## 📁 Project files
 
-| File | What it does |
-|---|---|
-| `train.py` | Cleans the dataset, trains the model, and saves it as `model.pkl` |
-| `app.py` | The Streamlit web app that loads `model.pkl` and makes predictions |
-| `model.pkl` | The already-trained model (ready to use — no need to retrain) |
-| `requirements.txt` | List of Python packages needed to run the app |
-| `diabetes_dataset.csv` | The training data (only needed if you want to retrain) |
+| File                   | What it does                                                       |
+| ---------------------- | ------------------------------------------------------------------ |
+| `train.py`             | Cleans the dataset, trains the model, and saves it as `model.pkl`  |
+| `app.py`               | The Streamlit web app that loads `model.pkl` and makes predictions |
+| `model.pkl`            | The already-trained model (ready to use — no need to retrain)      |
+| `requirements.txt`     | List of Python packages needed to run the app                      |
+| `diabetes_dataset.csv` | The training data (only needed if you want to retrain)             |
+| `Final_ML_Notebook.html` | Exploratory notebook comparing Random Forest, XGBoost, Logistic Regression, KNN, Decision Tree, and Naive Bayes on the full feature set (unbalanced) — the deployed model below is a separate, tuned version built specifically for the app |
 
 ---
 
 ## 🚀 Run it locally
 
 **Step 1 — Install the requirements**
-```bash
+
+```
 pip install -r requirements.txt
 ```
 
 **Step 2 — Run the app**
-```bash
+
+```
 streamlit run app.py
 ```
 
@@ -58,7 +61,7 @@ You'll get a public link like `yourapp.streamlit.app` that anyone can open and u
 
 If you want to retrain on new or updated data:
 
-```bash
+```
 python train.py
 ```
 
@@ -68,10 +71,21 @@ This regenerates `model.pkl` using `diabetes_dataset.csv`.
 
 ## 🧠 About the model
 
-- **Algorithm:** Random Forest Classifier
+- **Algorithm:** Random Forest Classifier (`n_estimators=300`, `max_depth=12`, `random_state=42`)
 - **Features used:** gender, age, hypertension, heart disease, smoking history, BMI, HbA1c level, blood glucose level
-- **Class imbalance handling:** `class_weight="balanced"` (diabetes cases are only ~8.5% of the data, so this helps the model catch more true cases)
-- **Performance:** ~92% accuracy, ~89% recall on diabetic cases
+  *(location, year, and race columns are intentionally excluded from the deployed model — dropped to keep the input form simple and to avoid using race as a predictive feature)*
+- **Preprocessing:** StandardScaler fit on the training split only (avoids leaking test-set information, unlike the exploratory notebook)
+- **Class imbalance handling:** `class_weight="balanced"` (diabetes cases are only ~8.5% of the data)
+- **Verified performance on held-out test set (20,000 records):**
+
+  | Metric | Score |
+  |---|---|
+  | Accuracy | 91.6% |
+  | Precision (diabetic class) | 50.4% |
+  | Recall (diabetic class) | 89.1% |
+  | F1 score (diabetic class) | 0.64 |
+
+  This is a deliberate trade-off: `class_weight="balanced"` sacrifices precision (more false positives) in exchange for much higher recall, so the model misses far fewer true diabetic cases — appropriate for a health-screening context where a missed case is costlier than a false alarm.
 
 ---
 
